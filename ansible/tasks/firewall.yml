@@ -1,0 +1,46 @@
+---
+# ============================================================================
+#  tasks/firewall.yml — Firewall local con ufw (Módulo 5)
+#  Qué: instala ufw y aplica una política de denegación por defecto con una
+#       lista blanca de puertos/orígenes parametrizada.
+#  Para qué: imponer mínimo privilegio a nivel de host; solo las VLAN
+#       autorizadas alcanzan cada servicio (complementa la microsegmentación M2).
+# ============================================================================
+
+# Qué: asegurar que ufw esté instalado.
+# Para qué: es el firewall local elegido (Open Source, nativo de Debian).
+- name: "Instalar ufw (firewall local)"
+  ansible.builtin.apt:
+    name: ufw
+    state: present
+    update_cache: true
+
+# Qué: política por defecto deny-in / allow-out (parametrizada).
+# Para qué: todo lo entrante se deniega salvo lo explícitamente permitido.
+- name: "Política por defecto del firewall (denegar entrante)"
+  community.general.ufw:
+    direction: incoming
+    policy: "{{ fw_politica_entrante }}"
+
+- name: "Política por defecto del firewall (permitir saliente)"
+  community.general.ufw:
+    direction: outgoing
+    policy: "{{ fw_politica_saliente }}"
+
+# Qué: aplicar la lista blanca de reglas definida en group_vars/all.yml.
+# Para qué: abrir SOLO los puertos necesarios desde SOLO los orígenes válidos.
+- name: "Aplicar reglas de entrada permitidas (lista blanca parametrizada)"
+  community.general.ufw:
+    rule: allow
+    port: "{{ item.puerto }}"
+    proto: "{{ item.proto }}"
+    from_ip: "{{ item.origen }}"
+    comment: "{{ item.desc }}"
+  loop: "{{ fw_reglas_permitidas }}"
+
+# Qué: habilitar ufw y registrar su activación al arranque.
+# Para qué: que el firewall quede activo y persistente tras reinicios.
+- name: "Habilitar y activar ufw"
+  community.general.ufw:
+    state: enabled
+</content>

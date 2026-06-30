@@ -1,0 +1,108 @@
+# ============================================================================
+#  Pipeline CI/CD seguro (SecDevOps) — Proyecto CREATIC (Módulo 4)
+#  Plataforma: GitHub Actions. Reemplaza el despliegue manual FTP/SCP del
+#  Portal Académico (CR-APPSRV-02) por un flujo con compuertas de seguridad.
+#
+#  Compuertas (todas con herramientas Open Source):
+#    - SCA  : Trivy  -> analiza dependencias de terceros (vuln. RCE de la lib PDF)
+#    - SAST : Semgrep-> analiza el código fuente propio (OWASP Top 10)
+#    - DAST : OWASP ZAP -> prueba la app desplegada en entorno de staging
+#
+#  Principio: "shift-left". Si SCA o SAST detectan vuln. crítica, el pipeline
+#  FALLA y el artefacto NUNCA llega a producción (CR-APPSRV-02).
+# ============================================================================
+name: CREATIC-SecDevOps
+
+# Disparadores: cada push y cada PR a la rama principal.
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+# Permisos mínimos para el token del workflow (mínimo privilegio).
+permissions:
+  contents: read
+  security-events: write   # para subir resultados SARIF al panel de seguridad
+
+jobs:
+
+  # --------------------------------------------------------------------------
+  # JOB 1 — SCA: Análisis de Composición de Software (dependencias de terceros)
+  # Qué: escanea las librerías del proyecto en busca de CVEs conocidos.
+  # Para qué: detectar la vulnerabilidad RCE inyectada en la librería de PDF
+  #           ANTES de construir/desplegar (este es el corazón del Módulo 4).
+  # --------------------------------------------------------------------------
+  sca-dependencias:
+    runs-on: ubuntu-latest
+    steps:
+      - name: "Descargar el código"
+        uses: actions/checkout@v4
+
+      - name: "SCA con Trivy (falla si hay CVE CRITICAL/HIGH)"
+        uses: aquasecurity/trivy-action@master
+        with:
+          scan-type: 'fs'                 # escaneo del sistema de archivos/manifiestos
+          scanners: 'vuln'                # análisis de vulnerabilidades de dependencias
+          severity: 'CRITICAL,HIGH'       # umbral de bloqueo
+          exit-code: '1'                  # CORTA el pipeline si encuentra coincidencias
+          format: 'table'
+
+  # --------------------------------------------------------------------------
+  # JOB 2 — SAST: Análisis Estático del código propio
+  # Qué: revisa el código fuente sin ejecutarlo (inyección SQL, XSS, secretos...).
+  # Para qué: cubrir el OWASP Top 10 en el código de los 3 desarrolladores.
+  # --------------------------------------------------------------------------
+  sast-codigo:
+    runs-on: ubuntu-latest
+    steps:
+      - name: "Descargar el código"
+        uses: actions/checkout@v4
+
+      - name: "SAST con Semgrep (reglas OWASP Top 10)"
+        uses: returntocorp/semgrep-action@v1
+        with:
+          config: >-
+            p/owasp-top-ten
+            p/secrets
+
+  # --------------------------------------------------------------------------
+  # JOB 3 — Build + DAST: pruebas dinámicas sobre la app desplegada en staging
+  # Qué: levanta la app en un entorno de pruebas y la ataca como caja negra.
+  # Para qué: detectar fallos solo visibles en ejecución; solo corre si SCA y
+  #           SAST pasaron (depende de ambos jobs).
+  # --------------------------------------------------------------------------
+  dast-staging:
+    runs-on: ubuntu-latest
+    needs: [sca-dependencias, sast-codigo]   # compuerta: requiere SCA y SAST en verde
+    steps:
+      - name: "Descargar el código"
+        uses: actions/checkout@v4
+
+      - name: "Desplegar la app en staging (entorno aislado, no producción)"
+        run: echo "Desplegando build en entorno de staging para DAST..."
+        # En un caso real: docker compose up del portal en una red de pruebas.
+
+      - name: "DAST con OWASP ZAP (baseline scan)"
+        uses: zaproxy/action-baseline@v0.12.0
+        with:
+          target: 'http://staging.creatic.local'
+
+  # --------------------------------------------------------------------------
+  # JOB 4 — Despliegue seguro a producción (CR-APPSRV-02)
+  # Qué: publica el artefacto SOLO si todas las compuertas de seguridad pasaron.
+  # Para qué: eliminar el FTP/SCP manual; despliegue auditable y autenticado.
+  # --------------------------------------------------------------------------
+  deploy-produccion:
+    runs-on: ubuntu-latest
+    needs: [dast-staging]                     # solo tras superar SCA + SAST + DAST
+    if: github.ref == 'refs/heads/main'
+    environment: produccion                   # requiere aprobación/registro de despliegue
+    steps:
+      - name: "Descargar el código"
+        uses: actions/checkout@v4
+
+      - name: "Desplegar a CR-APPSRV-02 vía canal seguro (SSH con clave, no FTP)"
+        run: echo "Despliegue autenticado a producción tras pasar todas las compuertas."
+        # En un caso real: rsync/ssh con clave a CR-APPSRV-02:2222 (puerto endurecido en M5).
+</content>

@@ -1,0 +1,37 @@
+%% ============================================================
+%%  CREATIC — Estado ACTUAL (Antes)
+%%  Red plana: un único segmento, sin segmentación ni inspección L7.
+%%  El acceso remoto usa VPN tradicional PPTP/L2TP (solo usuario/clave).
+%% ============================================================
+graph TB
+    Internet((Internet))
+    Remoto[Teletrabajo / BYOD<br/>VPN PPTP-L2TP<br/>solo usuario+clave]
+
+    Internet --> FW
+    Remoto -. VPN tradicional .-> FW
+
+    FW[Firewall perimetral tradicional<br/>Stateful · SIN IPS/IDS · SIN inspeccion L7]
+
+    FW --> LAN
+
+    subgraph LAN["RED PLANA UNICA — 10.0.0.0/24 (sin VLANs)"]
+        direction LR
+        DC[CR-DC-01<br/>Win Server 2019<br/>DC/DNS/DHCP<br/>SMBv1 activo]
+        WEB[CR-APPSRV-02<br/>Debian 11 · Apache<br/>SSH 22 root+clave]
+        DB[CR-DB-01<br/>Debian 11 · MySQL<br/>SIN cifrado at-rest]
+        FILE[CR-FILE-03<br/>Win Server 2016<br/>Everyone con acceso]
+        PCs[120 PCs oficina<br/>Antivirus por firmas]
+
+        DC --- WEB
+        WEB --- DB
+        DB --- FILE
+        FILE --- PCs
+    end
+
+    classDef vuln fill:#ffd6d6,stroke:#c0392b,color:#000;
+    class DC,WEB,DB,FILE,PCs vuln;
+    classDef peri fill:#ffe9b3,stroke:#b8860b,color:#000;
+    class FW peri;
+
+    %% Problema clave: WEB (expuesto) y DB (finanzas) en el MISMO segmento
+    %% => el movimiento lateral alcanza la base de datos sin barreras.

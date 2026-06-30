@@ -1,0 +1,55 @@
+%% ============================================================
+%%  CREATIC — Estado PROPUESTO (Despues) — Zero Trust & SASE
+%%  Microsegmentacion por VLANs + NGFW con IPS/IDS (OPNsense+Suricata)
+%%  + ZTNA (Headscale) + MFA/postura (Keycloak). Mínimo privilegio
+%%  entre segmentos: el trafico inter-VLAN pasa SIEMPRE por el NGFW.
+%% ============================================================
+graph TB
+    Internet((Internet))
+    Remoto[Teletrabajo / BYOD docentes]
+
+    Internet --> NGFW
+    Remoto -- ZTNA Headscale<br/>MFA + postura --> ZTNA{{Broker ZTNA<br/>Headscale + Keycloak}}
+    ZTNA --> NGFW
+
+    NGFW[/"NGFW — OPNsense + Suricata<br/>IPS/IDS · inspeccion L7 · punto de control inter-VLAN"/]
+
+    NGFW --> V99
+    NGFW --> V10
+    NGFW --> V20
+    NGFW --> V30
+    NGFW --> V40
+    NGFW --> V50
+
+    subgraph V10["VLAN 10 — Servidores criticos"]
+        DC[CR-DC-01<br/>DC/DNS/DHCP<br/>SMBv1 deshabilitado]
+        WEB[CR-APPSRV-02<br/>Apache · SSH 2222<br/>sin root, solo clave pub]
+        DB[CR-DB-01<br/>MySQL · cifrado at-rest<br/>solo acepta de WEB:3306]
+        FILE[CR-FILE-03<br/>permisos minimo privilegio]
+    end
+
+    subgraph V20["VLAN 20 — Administrativos (120)"]
+        A1[Equipos oficina<br/>agente Wazuh]
+    end
+    subgraph V30["VLAN 30 — Profesores planta (100)"]
+        P1[Equipos gestionados<br/>agente Wazuh]
+    end
+    subgraph V40["VLAN 40 — BYOD docentes (250)"]
+        B1[Dispositivos no gestionados<br/>cuarentena + chequeo postura]
+    end
+    subgraph V50["VLAN 50 — Estudiantes (5500)"]
+        E1[Solo Internet + SaaS<br/>sin acceso a VLAN 10]
+    end
+    subgraph V99["VLAN 99 — Gestion / SOC (out-of-band)"]
+        SIEM[Wazuh Manager/Indexer/Dashboard]
+    end
+
+    DC -.logs.-> SIEM
+    WEB -.logs.-> SIEM
+    DB -.logs.-> SIEM
+    FILE -.logs.-> SIEM
+
+    classDef seg fill:#d6f5d6,stroke:#27ae60,color:#000;
+    class DC,WEB,DB,FILE,A1,P1,B1,E1,SIEM seg;
+    classDef ctrl fill:#cfe2ff,stroke:#2c5fa8,color:#000;
+    class NGFW,ZTNA ctrl;

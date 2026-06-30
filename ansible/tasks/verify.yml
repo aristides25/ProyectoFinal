@@ -1,0 +1,71 @@
+---
+# ============================================================================
+#  tasks/verify.yml — Verificación post-hardening (Módulo 5, criterio nº 3)
+#  Qué: comprueba con evidencia que cada cambio quedó realmente aplicado.
+#  Para qué: NO declarar "listo" sin pruebas. Si algún assert falla, el
+#       playbook termina en error y señala exactamente qué control no se cumplió.
+# ============================================================================
+
+# Qué: leer la configuración efectiva de sshd.
+# Para qué: validar puerto, root y contraseñas sobre el archivo real.
+- name: "Leer sshd_config para verificación"
+  ansible.builtin.command: "grep -E '^(Port|PermitRootLogin|PasswordAuthentication)' /etc/ssh/sshd_config"
+  register: ssh_conf
+  changed_when: false
+
+- name: "VERIFICAR · SSH endurecido (puerto, root y contraseñas)"
+  ansible.builtin.assert:
+    that:
+      - "'Port ' ~ ssh_puerto in ssh_conf.stdout"
+      - "'PermitRootLogin ' ~ ssh_permitir_root in ssh_conf.stdout"
+      - "'PasswordAuthentication ' ~ ssh_password_auth in ssh_conf.stdout"
+    success_msg: "SSH OK: puerto {{ ssh_puerto }}, root={{ ssh_permitir_root }}, password={{ ssh_password_auth }}"
+    fail_msg: "FALLO: la configuración de SSH no cumple el estado deseado."
+
+# Qué: confirmar que ufw está activo.
+# Para qué: garantizar que el firewall local quedó habilitado.
+- name: "Leer estado de ufw"
+  ansible.builtin.command: "ufw status verbose"
+  register: ufw_estado
+  changed_when: false
+
+- name: "VERIFICAR · Firewall ufw activo"
+  ansible.builtin.assert:
+    that: "'Status: active' in ufw_estado.stdout"
+    success_msg: "Firewall OK: ufw activo con política por defecto deny."
+    fail_msg: "FALLO: ufw no está activo."
+
+# Qué: confirmar que los servicios innecesarios no están corriendo.
+# Para qué: validar la reducción de superficie de ataque.
+- name: "Comprobar que los servicios innecesarios están inactivos"
+  ansible.builtin.command: "systemctl is-active {{ item }}"
+  register: estado_serv
+  changed_when: false
+  failed_when: false
+  loop: "{{ servicios_innecesarios }}"
+
+- name: "VERIFICAR · Servicios innecesarios detenidos"
+  ansible.builtin.assert:
+    that: "item.stdout != 'active'"
+    success_msg: "Servicio {{ item.item }} inactivo (OK)."
+    fail_msg: "FALLO: el servicio {{ item.item }} sigue activo."
+  loop: "{{ estado_serv.results }}"
+  loop_control:
+    label: "{{ item.item }}"
+
+# Qué: en CR-DB-01, verificar el aislamiento de la base de datos.
+# Para qué: confirmar que MySQL escucha solo en su IP de segmento.
+- name: "CR-DB-01 · Leer configuración de bind-address"
+  ansible.builtin.command: "grep -E '^bind-address' {{ db_archivo_config }}"
+  register: db_bind
+  changed_when: false
+  failed_when: false
+  when: inventory_hostname == db_host_objetivo
+
+- name: "VERIFICAR · CR-DB-01 aislada (bind-address correcto)"
+  ansible.builtin.assert:
+    that: "db_bind_address in db_bind.stdout"
+    success_msg: "BD OK: MySQL escucha solo en {{ db_bind_address }}."
+    fail_msg: "FALLO: bind-address de MySQL no es el esperado."
+  when: inventory_hostname == db_host_objetivo
+</content>

@@ -1,0 +1,56 @@
+---
+# ============================================================================
+#  tasks/remediacion.yml — Remediación de vulnerabilidades del inventario (M5)
+#  Foco: CR-DB-01 (MySQL) — "mismo segmento que el web" y "sin cifrado at-rest".
+#  Qué: aísla la BD a nivel de red/servicio y activa el cifrado de datos en reposo.
+#  Para qué: que un compromiso del portal web NO derive en acceso directo a la
+#       base de calificaciones y finanzas (contención del movimiento lateral).
+#  Estas tareas solo aplican al host de base de datos (db_host_objetivo).
+# ============================================================================
+
+# Qué: limitar la escucha de MySQL a la IP de VLAN 10 (no a 0.0.0.0).
+# Para qué: que la BD no quede expuesta a toda la red plana.
+- name: "CR-DB-01 · MySQL escucha solo en su IP de segmento"
+  ansible.builtin.lineinfile:
+    path: "{{ db_archivo_config }}"
+    create: true
+    regexp: '^#?\s*bind-address'
+    line: "bind-address = {{ db_bind_address }}"
+    owner: root
+    group: root
+    mode: "0644"
+  when: inventory_hostname == db_host_objetivo
+  notify: Reiniciar mysql
+
+# Qué: activar el cifrado de tablespaces InnoDB (Data at Rest).
+# Para qué: remediar "sin cifrado en reposo"; protege calificaciones/finanzas
+#       aunque se sustraiga el disco o un backup (cumple Ley 81, ver M6).
+- name: "CR-DB-01 · Activar cifrado de datos en reposo (InnoDB)"
+  ansible.builtin.blockinfile:
+    path: "{{ db_archivo_config }}"
+    marker: "# {mark} CIFRADO AT-REST CREATIC"
+    block: |
+      [mysqld]
+      # Cifrado de tablespaces y del log de redo/undo (requiere keyring).
+      early-plugin-load = keyring_file.so
+      keyring_file_data = /var/lib/mysql-keyring/keyring
+      innodb_encrypt_tables = ON
+      innodb_encrypt_log = ON
+      innodb_encryption_threads = 4
+  when:
+    - inventory_hostname == db_host_objetivo
+    - db_cifrado_at_rest | bool
+  notify: Reiniciar mysql
+
+# Qué: regla de firewall que restringe el puerto MySQL al servidor web autorizado.
+# Para qué: defensa en profundidad — además de la VLAN, el host solo acepta 3306
+#       desde CR-APPSRV-02; cualquier otro origen se deniega.
+- name: "CR-DB-01 · Permitir 3306 SOLO desde el servidor web autorizado"
+  community.general.ufw:
+    rule: allow
+    port: "{{ db_puerto }}"
+    proto: tcp
+    from_ip: "{{ db_ip_web_autorizada }}"
+    comment: "MySQL solo desde CR-APPSRV-02"
+  when: inventory_hostname == db_host_objetivo
+</content>

@@ -1,0 +1,51 @@
+---
+# ============================================================================
+#  tasks/ssh.yml — Endurecimiento del servicio SSH (Módulo 5)
+#  Qué: desactiva el login de root, cambia el puerto y exige clave pública.
+#  Para qué: remediar "SSH abierto en 22 con root+contraseña" de CR-APPSRV-02
+#       y alinear con CIS Benchmark Linux (sección 5, acceso remoto).
+#  Todos los valores provienen de group_vars/all.yml (parametrización).
+# ============================================================================
+
+# Qué: garantizar que exista el usuario administrativo no-root.
+# Para qué: conservar una vía de acceso legítima cuando se desactive root.
+- name: "Asegurar el usuario administrativo no-root"
+  ansible.builtin.user:
+    name: "{{ usuario_admin }}"
+    state: present
+    shell: /bin/bash
+    create_home: true
+
+# Qué: cambiar el puerto de escucha de SSH (parametrizado).
+# Para qué: reducir el ruido de escaneos automáticos contra el 22.
+- name: "Configurar el puerto de SSH"
+  ansible.builtin.lineinfile:
+    path: /etc/ssh/sshd_config
+    regexp: '^#?\s*Port\s+'
+    line: "Port {{ ssh_puerto }}"
+    state: present
+    validate: 'sshd -t -f %s'        # valida la sintaxis antes de guardar
+  notify: Reiniciar sshd
+
+# Qué: desactivar el login directo de root (parametrizado: "no").
+# Para qué: forzar el uso de cuentas nominales + sudo (trazabilidad, mínimo priv.).
+- name: "Desactivar el login directo de root por SSH"
+  ansible.builtin.lineinfile:
+    path: /etc/ssh/sshd_config
+    regexp: '^#?\s*PermitRootLogin\s+'
+    line: "PermitRootLogin {{ ssh_permitir_root }}"
+    state: present
+    validate: 'sshd -t -f %s'
+  notify: Reiniciar sshd
+
+# Qué: deshabilitar la autenticación por contraseña.
+# Para qué: exigir clave pública, mitigando credential stuffing y fuerza bruta.
+- name: "Exigir autenticación por clave pública (desactivar contraseñas)"
+  ansible.builtin.lineinfile:
+    path: /etc/ssh/sshd_config
+    regexp: '^#?\s*PasswordAuthentication\s+'
+    line: "PasswordAuthentication {{ ssh_password_auth }}"
+    state: present
+    validate: 'sshd -t -f %s'
+  notify: Reiniciar sshd
+</content>

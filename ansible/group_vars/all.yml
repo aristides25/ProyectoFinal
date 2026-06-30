@@ -1,0 +1,50 @@
+---
+# ============================================================================
+#  Variables parametrizadas del hardening Linux — Proyecto CREATIC (Módulo 5)
+#  CRITERIO DE ACEPTACIÓN: ningún valor sensible va hardcodeado en las tareas;
+#  TODO se controla desde aquí. Ajustar estos valores adapta el hardening sin
+#  tocar la lógica de los playbooks.
+# ============================================================================
+
+# --- SSH ---
+# Puerto destino de SSH (se cambia desde el 22 por defecto para reducir el ruido
+# de escaneos automáticos y cumplir la línea base CIS).
+ssh_puerto: 2222
+# Usuario administrativo no-root que conservará acceso (mínimo privilegio).
+usuario_admin: "adminseg"
+# Desactivar el login directo de root por SSH (CIS Benchmark Linux 5.x).
+ssh_permitir_root: "no"
+# Permitir solo autenticación por clave pública (deshabilita contraseñas).
+ssh_password_auth: "no"
+
+# --- Servicios innecesarios a deshabilitar (reduce la superficie de ataque) ---
+# NIST 800-123: deshabilitar todo servicio no esencial para la función del host.
+servicios_innecesarios:
+  - avahi-daemon      # descubrimiento de red/mDNS, innecesario en servidor
+  - cups              # servidor de impresión, innecesario
+  - rpcbind           # mapeador RPC, vector clásico de exposición
+  - telnet.socket     # acceso en texto plano, nunca debe estar activo
+
+# --- Firewall local (ufw) ---
+# Política por defecto: denegar todo lo entrante, permitir lo saliente.
+fw_politica_entrante: "deny"
+fw_politica_saliente: "allow"
+# Reglas de entrada permitidas (lista blanca parametrizada).
+# Cada regla: puerto, protocolo y origen (subred de la VLAN autorizada).
+fw_reglas_permitidas:
+  - { puerto: "{{ ssh_puerto }}", proto: "tcp", origen: "10.10.99.0/24", desc: "SSH de gestion (VLAN 99 SOC)" }
+  - { puerto: "443",             proto: "tcp", origen: "10.10.20.0/24", desc: "HTTPS admins al portal" }
+  - { puerto: "443",             proto: "tcp", origen: "10.10.30.0/24", desc: "HTTPS profesores al portal" }
+  - { puerto: "1514",            proto: "tcp", origen: "10.10.99.0/24", desc: "Envio de logs a Wazuh Manager" }
+
+# --- Remediación específica de CR-DB-01 (Base de Datos MySQL) ---
+# Restricción crítica: la BD solo debe aceptar conexiones del servidor web,
+# nunca de toda la red plana (mitiga movimiento lateral hacia finanzas).
+db_host_objetivo: "CR-DB-01"
+db_ip_web_autorizada: "10.10.10.12"     # IP de CR-APPSRV-02 (único cliente legítimo)
+db_puerto: "3306"
+db_bind_address: "10.10.10.13"          # la BD escucha solo en su IP de VLAN 10
+# Cifrado de datos en reposo (Data at Rest): activar cifrado de tablespaces InnoDB.
+db_cifrado_at_rest: true
+db_archivo_config: "/etc/mysql/mysql.conf.d/creatic-hardening.cnf"
+</content>

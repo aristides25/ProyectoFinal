@@ -1,0 +1,20 @@
+---
+# ============================================================================
+#  handlers/main.yml — Manejadores de reinicio de servicios (Módulo 5)
+#  Qué: reinician un servicio SOLO cuando una tarea lo notifica (idempotencia).
+#  Para qué: evitar reinicios innecesarios; aplicar cambios de config de forma
+#       controlada únicamente cuando el archivo correspondiente cambió.
+# ============================================================================
+
+# Reinicia SSH tras modificar sshd_config (notificado desde tasks/ssh.yml).
+- name: "Reiniciar sshd"
+  ansible.builtin.service:
+    name: ssh
+    state: restarted
+
+# Reinicia MySQL tras cambios de aislamiento/cifrado (notificado desde remediacion.yml).
+- name: "Reiniciar mysql"
+  ansible.builtin.service:
+    name: mysql
+    state: restarted
+</content>

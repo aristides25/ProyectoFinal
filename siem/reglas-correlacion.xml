@@ -1,0 +1,93 @@
+<!--
+  ============================================================================
+   Reglas de correlación personalizadas de Wazuh — Proyecto CREATIC (Módulo 3)
+   Archivo: /var/ossec/etc/rules/local_rules.xml (en el Wazuh Manager)
+
+   Estas reglas implementan la detección de los TTPs de MITRE ATT&CK más
+   relevantes para CREATIC (ver Módulo 1): credential stuffing, movimiento
+   lateral y acceso indebido a la base de datos de finanzas.
+
+   IDs personalizados >= 100000 (rango reservado a reglas locales).
+  ============================================================================
+-->
+<group name="creatic,zerotrust,">
+
+  <!--
+    REGLA 1 — Fuerza bruta / credential stuffing contra SSH
+    Qué: dispara cuando un mismo origen falla N autenticaciones SSH en poco tiempo.
+    Criterio de disparo: >= 6 fallos de login en 120 segundos desde la misma IP.
+    Mapeo MITRE ATT&CK: T1110 (Brute Force) / T1078 (Valid Accounts).
+    Activo afectado: CR-APPSRV-02 (SSH). Severidad alta (nivel 10).
+  -->
+  <rule id="100010" level="10" frequency="6" timeframe="120">
+    <if_matched_sid>5710</if_matched_sid>   <!-- 5710 = intento de login SSH fallido -->
+    <same_source_ip />
+    <description>CREATIC: posible fuerza bruta/credential stuffing SSH (>=6 fallos en 120s)</description>
+    <mitre>
+      <id>T1110</id>
+      <id>T1078</id>
+    </mitre>
+    <group>authentication_failures,credential_stuffing,</group>
+  </rule>
+
+  <!--
+    REGLA 2 — Movimiento lateral: acceso indebido a la BD de finanzas
+    Qué: alerta si CR-DB-01 (MySQL/3306) recibe una conexión desde un origen que
+         NO es el servidor web autorizado (CR-APPSRV-02, 10.10.10.12).
+    Criterio de disparo: log de conexión a 3306 con IP de origen distinta de la
+         lista blanca. Esto viola la matriz de flujos del Módulo 2.
+    Mapeo MITRE ATT&CK: T1021 (Remote Services) / T1210 (Exploitation of Remote Services).
+    Activo afectado: CR-DB-01. Severidad crítica (nivel 12).
+  -->
+  <rule id="100020" level="12">
+    <decoded_as>mysql_log</decoded_as>
+    <field name="dstport">3306</field>
+    <match>Connect</match>
+    <srcip negate="yes">10.10.10.12</srcip>
+    <description>CREATIC: conexión a la BD de finanzas (CR-DB-01) desde origen NO autorizado — posible movimiento lateral</description>
+    <mitre>
+      <id>T1021</id>
+      <id>T1210</id>
+    </mitre>
+    <group>lateral_movement,database_access,</group>
+  </rule>
+
+  <!--
+    REGLA 3 — Uso/intento de SMBv1 (riesgo de ransomware)
+    Qué: alerta cuando se detecta tráfico o eventos asociados a SMBv1, que debió
+         quedar deshabilitado por el hardening (Módulo 5) en CR-DC-01/CR-FILE-03.
+    Criterio de disparo: evento de Windows/IDS que referencia SMB1/SMBv1.
+    Mapeo MITRE ATT&CK: T1210 / T1570 (Lateral Tool Transfer).
+    Activo afectado: CR-DC-01, CR-FILE-03. Severidad alta (nivel 11).
+  -->
+  <rule id="100030" level="11">
+    <if_group>windows</if_group>
+    <match>SMB1|SMBv1</match>
+    <description>CREATIC: detección de SMBv1 (debió estar deshabilitado) — riesgo de ransomware/movimiento lateral</description>
+    <mitre>
+      <id>T1210</id>
+      <id>T1570</id>
+    </mitre>
+    <group>smbv1,ransomware_precursor,</group>
+  </rule>
+
+  <!--
+    REGLA 4 — Creación de cuenta administrativa o cambio de privilegios (persistencia)
+    Qué: alerta cuando se crea un usuario o se añade a un grupo administrativo.
+    Criterio de disparo: Windows Event 4720 (cuenta creada) / 4732 (añadido a grupo
+         privilegiado) en los servidores.
+    Mapeo MITRE ATT&CK: T1136 (Create Account) / T1098 (Account Manipulation).
+    Severidad alta (nivel 10).
+  -->
+  <rule id="100040" level="10">
+    <if_group>windows</if_group>
+    <field name="win.system.eventID">^4720$|^4732$</field>
+    <description>CREATIC: creación de cuenta o elevación de privilegios en servidor — posible persistencia</description>
+    <mitre>
+      <id>T1136</id>
+      <id>T1098</id>
+    </mitre>
+    <group>account_changes,persistence,</group>
+  </rule>
+
+</group>

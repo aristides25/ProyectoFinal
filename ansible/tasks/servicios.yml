@@ -1,0 +1,23 @@
+---
+# ============================================================================
+#  tasks/servicios.yml — Deshabilitar servicios innecesarios (Módulo 5)
+#  Qué: detiene y deshabilita los servicios listados en group_vars/all.yml.
+#  Para qué: cada servicio activo es superficie de ataque; NIST 800-123 exige
+#       ejecutar solo lo estrictamente necesario para la función del servidor.
+# ============================================================================
+
+# Qué: detener y deshabilitar cada servicio innecesario (parametrizado).
+# Para qué: que no arranquen al boot ni queden escuchando.
+# Nota: failed_when controla servicios que podrían no existir en el host,
+#       para que la tarea sea idempotente y no rompa el playbook.
+- name: "Detener y deshabilitar servicios innecesarios"
+  ansible.builtin.systemd:
+    name: "{{ item }}"
+    state: stopped
+    enabled: false
+  loop: "{{ servicios_innecesarios }}"
+  register: resultado_servicios
+  failed_when:
+    - resultado_servicios is failed
+    - "'Could not find the requested service' not in (resultado_servicios.msg | default(''))"
+</content>

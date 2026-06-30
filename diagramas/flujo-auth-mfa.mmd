@@ -1,0 +1,38 @@
+%% ============================================================
+%%  CREATIC — Flujo de autenticacion ZTNA con MFA y postura
+%%  Principio Zero Trust: "nunca confiar, siempre verificar".
+%%  El acceso a recursos NO se concede por estar en la red, sino
+%%  tras verificar identidad (MFA) + postura del dispositivo, y se
+%%  reevalua de forma continua. Reemplaza la VPN PPTP/L2TP.
+%% ============================================================
+sequenceDiagram
+    autonumber
+    actor U as Usuario / Dispositivo
+    participant H as Cliente Headscale (ZTNA)
+    participant K as Keycloak (IdP + MFA)
+    participant P as Evaluador de Postura
+    participant N as NGFW OPNsense (PEP)
+    participant R as Recurso (VLAN 10)
+
+    U->>H: Solicita acceso a recurso interno
+    H->>K: Redirige a autenticacion (OIDC)
+    K->>U: Solicita credenciales
+    U->>K: Usuario + contraseña
+    K->>U: Reto MFA (TOTP / WebAuthn)
+    U->>K: Codigo / passkey
+    K-->>H: Token de identidad (si MFA OK)
+
+    H->>P: Reporta postura del dispositivo
+    Note over P: Verifica: SO actualizado, disco cifrado,<br/>antivirus/EDR activo, no jailbreak,<br/>certificado de dispositivo
+    alt Postura conforme
+        P-->>H: Postura APROBADA
+        H->>N: Presenta identidad + postura validas
+        N->>N: Aplica politica de minimo privilegio<br/>(¿este usuario puede ir a este recurso?)
+        N-->>R: Permite sesion (solo puerto/servicio necesario)
+        R-->>U: Acceso concedido
+        Note over N,R: Reevaluacion continua: si cambia la postura<br/>o el riesgo, se revoca la sesion.
+    else Postura no conforme (tipico BYOD)
+        P-->>H: Postura RECHAZADA
+        H->>N: Deriva a VLAN 40 (cuarentena)
+        N-->>U: Acceso denegado / remediacion requerida
+    end

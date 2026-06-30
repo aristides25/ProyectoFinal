@@ -1,0 +1,60 @@
+---
+# ============================================================================
+#  Playbook principal de hardening Linux — Proyecto CREATIC (Módulo 5)
+#  Objetivos: CR-APPSRV-02 (Apache) y CR-DB-01 (MySQL), ambos Debian 11.
+#
+#  Cumple los 3 criterios de aceptación:
+#    1) Parametrización  -> todas las variables en group_vars/all.yml
+#    2) Comentarios ES   -> cada bloque lógico explica el qué y el para qué
+#    3) Verificación     -> tasks/verify.yml confirma el estado deseado final
+#
+#  Uso:
+#    ansible-playbook -i inventory.ini hardening-linux.yml
+#    (tras el primer run, reconectar con: -e "ansible_port=2222")
+# ============================================================================
+
+- name: "Hardening de servidores Linux CREATIC (Zero Trust / Defensa en Profundidad)"
+  hosts: linux_servers
+  become: true                      # se requieren privilegios de root para endurecer el SO
+  gather_facts: true
+
+  tasks:
+    # --- Bloque 1: Firewall PRIMERO ---
+    # Para qué: abrir el puerto SSH nuevo ANTES de tocar sshd, evitando quedar
+    # bloqueados fuera del servidor cuando se reinicie el servicio SSH.
+    - name: "Configurar el firewall local (ufw) con reglas parametrizadas"
+      ansible.builtin.import_tasks: tasks/firewall.yml
+      tags: [firewall]
+
+    # --- Bloque 2: Endurecimiento de SSH ---
+    # Para qué: desactivar root directo, cambiar el puerto y exigir clave pública.
+    - name: "Endurecer la configuración de SSH"
+      ansible.builtin.import_tasks: tasks/ssh.yml
+      tags: [ssh]
+
+    # --- Bloque 3: Deshabilitar servicios innecesarios ---
+    # Para qué: reducir la superficie de ataque (NIST 800-123).
+    - name: "Deshabilitar servicios innecesarios"
+      ansible.builtin.import_tasks: tasks/servicios.yml
+      tags: [servicios]
+
+    # --- Bloque 4: Remediación de vulnerabilidades del inventario ---
+    # Para qué: cifrado at-rest y aislamiento de segmento en CR-DB-01.
+    - name: "Remediar vulnerabilidades específicas del inventario"
+      ansible.builtin.import_tasks: tasks/remediacion.yml
+      tags: [remediacion]
+
+  # --- Bloque 5: Verificación post-hardening (criterio de aceptación nº 3) ---
+  # Para qué: confirmar, con evidencia, que cada cambio quedó aplicado. Si algo
+  # no cumple el estado deseado, el playbook FALLA aquí (no se declara "listo"
+  # sin verificación).
+  post_tasks:
+    - name: "Verificar el estado deseado tras el hardening"
+      ansible.builtin.import_tasks: tasks/verify.yml
+      tags: [verify]
+
+  # --- Manejadores: reinician servicios solo cuando una tarea lo notifica ---
+  handlers:
+    - name: "Importar handlers de reinicio de servicios"
+      ansible.builtin.import_tasks: handlers/main.yml
+</content>

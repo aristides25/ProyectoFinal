@@ -1,0 +1,11 @@
+# Artefactos temporales y del sistema
+*.tmp
+_*.txt
+Thumbs.db
+desktop.ini
+.DS_Store
+
+# Salidas de render/exportación (se regeneran)
+diagramas/*.png
+diagramas/*.svg
+*.pdf
