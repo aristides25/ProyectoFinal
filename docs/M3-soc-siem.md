@@ -106,4 +106,3 @@ Ley 81 de Panamá). Resumen técnico:
 - Reglas de correlación → MITRE ATT&CK → `siem/reglas-correlacion.xml`
 - Visibilidad BYOD → CISA ZTMM (Dispositivos/Visibilidad) → NGFW + agente opcional
 - Retención de logs → Ley 81 → `docs/M6-cumplimiento-ley81.md`
-</content>

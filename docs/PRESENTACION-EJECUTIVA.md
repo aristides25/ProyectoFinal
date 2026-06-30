@@ -65,4 +65,3 @@ Tener esta slide lista para abrir cuando el Director inyecte el incidente.
 - Lleva impreso/visible el **playbook de contención** (M7 §4): es tu red de seguridad.
 - Cada respuesta técnica termina con **"…y eso está implementado en `<archivo>`"** (trazabilidad).
 - Si no sabes un dato (p. ej. página de Mandiant), dilo y remite al informe; no inventes.
-</content>

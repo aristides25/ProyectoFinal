@@ -105,4 +105,3 @@ jobs:
       - name: "Desplegar a CR-APPSRV-02 vía canal seguro (SSH con clave, no FTP)"
         run: echo "Despliegue autenticado a producción tras pasar todas las compuertas."
         # En un caso real: rsync/ssh con clave a CR-APPSRV-02:2222 (puerto endurecido en M5).
-</content>

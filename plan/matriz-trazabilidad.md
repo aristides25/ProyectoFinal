@@ -39,4 +39,3 @@
 
 > **Estado:** matriz inicial creada en M0. Se actualiza al cerrar cada módulo, enlazando
 > los archivos reales conforme se generan.
-</content>

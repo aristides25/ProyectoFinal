@@ -57,4 +57,3 @@
   handlers:
     - name: "Importar handlers de reinicio de servicios"
       ansible.builtin.import_tasks: handlers/main.yml
-</content>

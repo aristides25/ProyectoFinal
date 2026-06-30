@@ -81,4 +81,3 @@
 - [ ] Números de artículo de la Ley 81 verificados en M6.
 - [ ] Repositorio accesible (enlace) con Ansible/PowerShell.
 - [ ] Practicado el salto exposición → incidente → exposición.
-</content>

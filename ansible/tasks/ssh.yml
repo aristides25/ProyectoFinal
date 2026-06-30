@@ -48,4 +48,3 @@
     state: present
     validate: 'sshd -t -f %s'
   notify: Reiniciar sshd
-</content>

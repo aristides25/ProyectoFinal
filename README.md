@@ -11,6 +11,18 @@ parametrizado y cada cambio incluye verificación post-aplicación.
 
 ---
 
+## Entregables finales (generados en `entregables/`)
+
+| # | Entregable | Archivo |
+|---|---|---|
+| 1 | Documento técnico (PDF, 27 págs, diagramas vectoriales) | `entregables/CREATIC-Documento-Tecnico.pdf` |
+| 2 | Repositorio de código (Ansible + PowerShell) | este repositorio |
+| 3 | Presentación ejecutiva (PowerPoint editable) | `entregables/CREATIC-Presentacion-Ejecutiva.pptx` |
+| 3 | Presentación ejecutiva (PDF para proyectar) | `entregables/CREATIC-Presentacion-Ejecutiva.pdf` |
+
+> Regenerar el PDF: `node build/build.mjs && npx @mermaid-js/mermaid-cli -i build/assembled.md -o build/assembled-img.md && npx md-to-pdf build/assembled-img.md`.
+> Regenerar las slides: `npx @marp-team/marp-cli build/slides.md --pptx --allow-local-files -o entregables/CREATIC-Presentacion-Ejecutiva.pptx`.
+
 ## Índice de entregables
 
 | # | Entregable | Ubicación |
@@ -22,7 +34,7 @@ parametrizado y cada cambio incluye verificación post-aplicación.
 | M2 | Arquitectura de red moderna (Zero Trust & SASE) | [`docs/M2-arquitectura.md`](docs/M2-arquitectura.md) · [`diagramas/`](diagramas/) |
 | M3 | Operaciones de seguridad (SOC/SIEM Wazuh) | [`docs/M3-soc-siem.md`](docs/M3-soc-siem.md) · [`siem/`](siem/) |
 | M4 | Ciclo de desarrollo seguro (SecDevOps) | [`docs/M4-secdevops.md`](docs/M4-secdevops.md) · [`cicd/`](cicd/) |
-| M5 | Automatización de hardening (código real) | [`ansible/`](ansible/) · [`powershell/`](powershell/) |
+| M5 | Automatización de hardening (código real) | [`docs/M5-hardening.md`](docs/M5-hardening.md) · [`ansible/`](ansible/) · [`powershell/`](powershell/) |
 | M6 | Cumplimiento regulatorio (Ley 81 Panamá) | [`docs/M6-cumplimiento-ley81.md`](docs/M6-cumplimiento-ley81.md) |
 | M7 | Gestión de riesgos y respuesta a incidentes (IRP) | [`docs/M7-riesgos-irp.md`](docs/M7-riesgos-irp.md) |
 | M8 | Documento técnico (plantilla de ensamblaje del PDF) | [`docs/DOCUMENTO-TECNICO.md`](docs/DOCUMENTO-TECNICO.md) |
@@ -64,4 +76,3 @@ proyecto-creatic/
 | CR-APPSRV-02 | Debian 11 | Servidor Web Apache (Portal Académico) | `ansible/hardening-linux.yml` |
 | CR-DB-01 | Debian 11 | Base de Datos MySQL (Calificaciones y Finanzas) | `ansible/hardening-linux.yml` |
 | CR-FILE-03 | Windows Server 2016 | Servidor de archivos (Administración) | `powershell/Harden-Windows.ps1` |
-</content>

@@ -93,4 +93,3 @@ hardware/VMs existentes — sostenible para una institución educativa.
 # 2) Concatenar los Markdown en el orden del índice y convertir con Pandoc:
 #    pandoc portada.md resumen.md docs/M1-amenazas.md ... -o CREATIC.pdf
 ```
-</content>

@@ -104,4 +104,3 @@ cada una rastreable a un control concreto:
 - IRP y ciclo de vida → NIST 800-61 Rev. 2 → §3
 - Acciones de contención rastreables → M2 (NGFW/VLAN), M3 (Wazuh), M5 (ufw/cifrado) → §4
 - Notificación de brechas → Ley 81 / ANTAI → M6
-</content>

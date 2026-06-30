@@ -53,4 +53,3 @@
     from_ip: "{{ db_ip_web_autorizada }}"
     comment: "MySQL solo desde CR-APPSRV-02"
   when: inventory_hostname == db_host_objetivo
-</content>

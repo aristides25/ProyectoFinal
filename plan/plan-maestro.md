@@ -52,4 +52,3 @@ licencias = **$0** → solo Open Source de nivel empresarial.
 vivo**; hay que pausar, abrir el IRP propio y dar **3 acciones exactas de contención**
 demostrablemente derivadas del IRP + arquitectura propios. → El M7 se diseña para que cada
 acción de contención sea rastreable a una VLAN, una regla de Wazuh o un control de Headscale.
-</content>

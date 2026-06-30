@@ -20,4 +20,3 @@
   failed_when:
     - resultado_servicios is failed
     - "'Could not find the requested service' not in (resultado_servicios.msg | default(''))"
-</content>

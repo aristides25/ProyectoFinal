@@ -43,4 +43,3 @@
 - name: "Habilitar y activar ufw"
   community.general.ufw:
     state: enabled
-</content>

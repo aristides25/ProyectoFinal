@@ -68,4 +68,3 @@
     success_msg: "BD OK: MySQL escucha solo en {{ db_bind_address }}."
     fail_msg: "FALLO: bind-address de MySQL no es el esperado."
   when: inventory_hostname == db_host_objetivo
-</content>

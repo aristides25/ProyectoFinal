@@ -1,11 +1,12 @@
-# Artefactos temporales y del sistema
+# Temporales, investigación y build
+_research/
+build/
+node_modules/
 *.tmp
 _*.txt
 Thumbs.db
 desktop.ini
 .DS_Store
 
-# Salidas de render/exportación (se regeneran)
-diagramas/*.png
-diagramas/*.svg
-*.pdf
+# SVG intermedios del render de Mermaid (los PNG sí se versionan)
+*.svg

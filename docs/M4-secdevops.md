@@ -95,4 +95,3 @@ Supongamos que, pese al SCA, una versión vulnerable llega a producción y un at
 - SCA del RCE → CISA/NIST Supply Chain → Trivy + Dependabot
 - SAST/DAST → OWASP Top 10 / ASVS → Semgrep + OWASP ZAP
 - Contención del RCE → NIST 800-207 (microsegmentación) → M2 (matriz de flujos) + M5 (ufw, cifrado) + M3 (regla 100020)
-</content>

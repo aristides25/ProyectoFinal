@@ -47,4 +47,3 @@ db_bind_address: "10.10.10.13"          # la BD escucha solo en su IP de VLAN 10
 # Cifrado de datos en reposo (Data at Rest): activar cifrado de tablespaces InnoDB.
 db_cifrado_at_rest: true
 db_archivo_config: "/etc/mysql/mysql.conf.d/creatic-hardening.cnf"
-</content>

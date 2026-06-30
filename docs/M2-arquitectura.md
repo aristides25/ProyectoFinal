@@ -229,4 +229,3 @@ ingeniería (las que cubre este proyecto), respetando la restricción de la junt
 - NGFW IPS/IDS → CISA ZTMM (Redes) → OPNsense + Suricata
 - ZTNA + MFA + postura → CISA ZTMM (Identidad/Dispositivos); Ley 81 Art. 13 → `diagramas/flujo-auth-mfa.mmd`
 - Cifrado de datos y mínimo privilegio → CISA ZTMM (Datos) → se implementa en M5
-</content>
